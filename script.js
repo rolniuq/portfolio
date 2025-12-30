@@ -32,15 +32,22 @@ function parseFrontMatter(content) {
 }
 
 async function loadPortfolio() {
+    console.log('Loading portfolio...');
+    
     const nameElement = document.getElementById('name');
     const titleElement = document.getElementById('title');
     const aboutElement = document.getElementById('about');
     const projectsElement = document.getElementById('projects');
     const contactElement = document.getElementById('contact');
 
+    console.log('Loading content files...');
     const aboutContent = await loadMarkdownFile('content/about.md');
     const projectsContent = await loadMarkdownFile('content/projects.md');
     const contactContent = await loadMarkdownFile('content/contact.md');
+    
+    console.log('About content:', aboutContent ? 'loaded' : 'failed');
+    console.log('Projects content:', projectsContent ? 'loaded' : 'failed');
+    console.log('Contact content:', contactContent ? 'loaded' : 'failed');
 
     if (aboutContent) {
         const { data, content } = parseFrontMatter(aboutContent);
@@ -50,11 +57,14 @@ async function loadPortfolio() {
     }
 
     if (projectsContent) {
+        console.log('Parsing projects...');
         const projects = projectsContent.split('---').filter(p => p.trim());
+        console.log('Found projects:', projects.length);
         let projectsHTML = '<h2>Projects</h2>';
 
-        projects.forEach(project => {
+        projects.forEach((project, index) => {
             const { data, content } = parseFrontMatter(project.trim());
+            console.log(`Project ${index}:`, data);
             if (data.name) {
                 projectsHTML += `
                     <div class="project">
@@ -68,6 +78,9 @@ async function loadPortfolio() {
         });
 
         projectsElement.innerHTML = projectsHTML;
+        console.log('Projects rendered');
+    } else {
+        console.error('No projects content found');
     }
 
     if (contactContent) {
