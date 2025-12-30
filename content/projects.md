@@ -9,18 +9,19 @@ Built with vanilla JavaScript and modern CSS. Focuses on performance and accessi
 ---
 
 ---
-name: Project Two
-description: Clean portfolio template
-link: https://github.com/yourusername/project2
+name: Darker PDF
+description: Convert PDFs to dark mode
+link: https://github.com/rolniuq/pdf-darker
 ---
 
-A simple, responsive portfolio template that reads content from markdown files. Easy to customize and maintain.
+A simple python script to convert pdf file to dark mode (with dark background and white text)
 
 ---
 
 ---
-name: Project Three
+name: Task Hub
 description: Minimal design system
+link: https://github.com/rolniuq/task-hub
 ---
 
-A lightweight design system for building consistent user interfaces without the bloat of larger frameworks.
+Fullstack go apps, provide web and desktop app for management our tasks

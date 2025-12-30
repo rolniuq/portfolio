@@ -1,5 +1,5 @@
 Feel free to reach out if you'd like to collaborate or just say hello.
 
-- Email: your.email@example.com
-- GitHub: github.com/yourusername
-- LinkedIn: linkedin.com/in/yourusername
+- Email: truongquynh2525@gmail.com
+- GitHub: https://github.com/rolniuq
+- LinkedIn: [linkedin.com/in/yourusername](https://www.linkedin.com/in/quynh-vo-87b627234/)

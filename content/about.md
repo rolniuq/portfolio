@@ -1,6 +1,6 @@
 ---
-name: Your Name
-title: Developer / Designer
+name: Võ Hữu Trường Quỳnh (Raymond)
+title: Software Engineer
 ---
 
 I'm a minimalist developer focused on creating clean, functional solutions. I believe in simplicity and efficiency in both design and code.
