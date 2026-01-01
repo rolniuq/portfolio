@@ -74,7 +74,10 @@ async function loadPortfolio() {
             console.log(`Processing project ${index}:`, trimmedProject.substring(0, 100) + '...');
             const { data, content } = parseFrontMatter(trimmedProject);
             console.log(`Project ${index} data:`, data);
-            if (data.name) {
+            console.log(`Project ${index} has name:`, !!data.name);
+            console.log(`Project ${index} name value:`, data.name);
+            
+            if (data.name && data.name.trim()) {
                 projectsHTML += `
                     <div class="project">
                         <h3>${data.name}</h3>
