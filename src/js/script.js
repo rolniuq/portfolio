@@ -46,11 +46,13 @@ async function loadPortfolio() {
     const nameElement = document.getElementById('name');
     const titleElement = document.getElementById('title');
     const aboutElement = document.getElementById('about');
+    const blogElement = document.getElementById('blog');
     const projectsElement = document.getElementById('projects');
     const contactElement = document.getElementById('contact');
 
     
     const aboutContent = await loadMarkdownFile('content/about.md');
+    const blogContent = await loadMarkdownFile('content/blog.md');
     const projectsContent = await loadMarkdownFile('content/projects.md');
     const contactContent = await loadMarkdownFile('content/contact.md');
     
@@ -61,6 +63,23 @@ async function loadPortfolio() {
         nameElement.textContent = data.name || 'Your Name';
         titleElement.textContent = data.title || 'Your Title';
         aboutElement.innerHTML = marked.parse(content);
+    }
+
+    if (blogContent) {
+        const { data, content } = parseFrontMatter(blogContent);
+        let blogHTML = '<h2>Blog</h2>';
+        
+        if (data.description) {
+            blogHTML += `<p>${data.description}</p>`;
+        }
+        
+        blogHTML += marked.parse(content);
+        
+        if (data.link) {
+            blogHTML += `<p><a href="${data.link}" target="_blank" class="blog-link">Visit Blog →</a></p>`;
+        }
+        
+        blogElement.innerHTML = blogHTML;
     }
 
     if (projectsContent) {
