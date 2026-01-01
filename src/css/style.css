@@ -9,6 +9,12 @@ body {
     line-height: 1.6;
     color: #333;
     background: #fff;
+    transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+body.dark-mode {
+    color: #e0e0e0 !important;
+    background: #1a1a1a !important;
 }
 
 .container {
@@ -34,6 +40,10 @@ h1 {
     margin-bottom: 1rem;
 }
 
+body.dark-mode #title {
+    color: #b0b0b0 !important;
+}
+
 section {
     margin-bottom: 3rem;
 }
@@ -46,11 +56,20 @@ h2 {
     padding-bottom: 0.5rem;
 }
 
+body.dark-mode h2 {
+    border-bottom-color: #444 !important;
+}
+
 .project {
     margin-bottom: 2rem;
     padding: 1rem;
     border: 1px solid #eee;
     border-radius: 4px;
+    transition: border-color 0.3s ease;
+}
+
+body.dark-mode .project {
+    border-color: #444 !important;
 }
 
 .project h3 {
@@ -64,9 +83,18 @@ h2 {
     margin-bottom: 0.5rem;
 }
 
+body.dark-mode .project p {
+    color: #b0b0b0 !important;
+}
+
 a {
     color: #333;
     text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+body.dark-mode a {
+    color: #4a9eff !important;
 }
 
 a:hover {
@@ -81,6 +109,36 @@ li {
     margin-bottom: 0.5rem;
 }
 
+.theme-toggle {
+    background: none;
+    border: 2px solid #333;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+    background-color: #333;
+    color: #fff;
+}
+
+body.dark-mode .theme-toggle {
+    border-color: #4a9eff;
+    color: #4a9eff;
+}
+
+body.dark-mode .theme-toggle:hover {
+    background-color: #4a9eff;
+    color: #fff;
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 1rem;
@@ -88,5 +146,11 @@ li {
     
     h1 {
         font-size: 2rem;
+    }
+    
+    .theme-toggle {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
     }
 }
