@@ -34,6 +34,11 @@ function parseFrontMatter(content) {
 async function loadPortfolio() {
     console.log('Loading portfolio...');
     
+    if (typeof marked === 'undefined') {
+        console.error('Marked.js library not loaded');
+        return;
+    }
+    
     const nameElement = document.getElementById('name');
     const titleElement = document.getElementById('title');
     const aboutElement = document.getElementById('about');
@@ -63,8 +68,12 @@ async function loadPortfolio() {
         let projectsHTML = '<h2>Projects</h2>';
 
         projects.forEach((project, index) => {
-            const { data, content } = parseFrontMatter(project.trim());
-            console.log(`Project ${index}:`, data);
+            const trimmedProject = project.trim();
+            if (!trimmedProject) return;
+            
+            console.log(`Processing project ${index}:`, trimmedProject.substring(0, 100) + '...');
+            const { data, content } = parseFrontMatter(trimmedProject);
+            console.log(`Project ${index} data:`, data);
             if (data.name) {
                 projectsHTML += `
                     <div class="project">
@@ -74,6 +83,8 @@ async function loadPortfolio() {
                         ${data.link ? `<p><a href="${data.link}" target="_blank">View Project</a></p>` : ''}
                     </div>
                 `;
+            } else {
+                console.log(`Skipping project ${index} - no name found`);
             }
         });
 
