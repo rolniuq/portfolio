@@ -19,13 +19,7 @@ def start_server(port=8000):
     script_dir = Path(__file__).parent
     os.chdir(script_dir)
     
-    class CustomHandler(http.server.SimpleHTTPRequestHandler):
-        def do_GET(self):
-            if self.path == '/':
-                self.path = '/src/index.html'
-            return super().do_GET()
-    
-    Handler = CustomHandler
+    Handler = http.server.SimpleHTTPRequestHandler
     
     try:
         with socketserver.TCPServer(("", port), Handler) as httpd:
