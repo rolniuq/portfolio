@@ -11,7 +11,7 @@ A comprehensive task management application built with Go, featuring both web an
 ---
 name: FotoBoo
 description: Photo booth API service with clean architecture
-link: https://github.com/rolniuq/fotoboo
+link: https://fotoboo.onrender.com
 ---
 
 A RESTful photo booth API built with Go using Clean Architecture principles. Enables photo capture, storage, and retrieval for event photo booths and retail applications. Features local filesystem storage with metadata persistence and CORS support.
