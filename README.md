@@ -18,16 +18,21 @@ This portfolio showcases the work of Võ Hữu Trường Quỳnh (Raymond), a So
 ## Tech Stack
 
 - HTML5
-- CSS3
+- CSS3 (with custom properties)
 - Vanilla JavaScript
 - Marked.js (for Markdown parsing)
-- Python3 (for local development server)
+- Node.js or Python3 (for local development server)
 
 ## Project Structure
 
 ```
 portfolio/
 ├── index.html              # Main HTML file (GitHub Pages entry point)
+├── .nojekyll               # Disables Jekyll on GitHub Pages
+├── .gitignore              # Prevents committing OS/build artifacts
+├── LICENSE                 # MIT license
+├── start-server.py         # Local development server
+├── README.md               # This file
 ├── src/                    # Source code directory
 │   ├── css/
 │   │   └── style.css       # Stylesheets
@@ -35,15 +40,13 @@ portfolio/
 │   │   └── script.js       # JavaScript functionality
 │   └── assets/
 │       └── images/
-│           └── kappara.png # Favicon and images
-├── content/                # Markdown content files
-│   ├── about.md            # About section content
-│   ├── projects.md         # Projects showcase
-│   └── contact.md          # Contact information
-├── scripts/                # Utility scripts
-│   └── start-server.py     # Local development server
-├── start-server.py         # Main server script (root level)
-└── README.md               # This file
+│           ├── kappara.png      # Favicon (64x64)
+│           └── kappara-full.png # Original favicon (1056x992, kept as backup)
+└── content/                # Markdown content files
+    ├── about.md            # About section content (name, title, skills)
+    ├── projects.md         # Projects showcase (name, description, tags, link)
+    ├── blog.md             # Blog section (external link)
+    └── contact.md          # Contact information
 ```
 
 ## Getting Started
@@ -57,14 +60,23 @@ portfolio/
    ```
 
 2. **Start the development server**
+
+   With Node.js:
+   ```bash
+   node start-server.js
+   ```
+   
+   Or with Python:
    ```bash
    python3 start-server.py
    ```
    
-   This will start a local server at `http://localhost:8000` and open your browser automatically.
+   Either will start a server at `http://localhost:8000` and open your browser automatically.
 
 3. **Optional: Specify a different port**
    ```bash
+   node start-server.js 3000
+   # or
    python3 start-server.py 3000
    ```
 
@@ -84,9 +96,11 @@ Update your portfolio content by editing the Markdown files in the `content/` di
 
 ## Projects Featured
 
-- **Project One**: A minimal web application built with vanilla JavaScript and modern CSS
-- **Darker PDF**: Python script to convert PDFs to dark mode
-- **Task Hub**: Fullstack Go application for task management with web and desktop apps
+- **Task Hub**: Fullstack Go task management with PostgreSQL, NATS, Docker
+- **FotoBoo**: RESTful photo booth API with Clean Architecture
+- **Jirar**: Modern CLI tool for Jira ticket management
+- **Robolo**: Comprehensive GitHub automation bot
+- **PDF Darker**: Python utility to convert PDFs to dark mode
 
 ## Contact
 

@@ -1,177 +1,262 @@
+/* ═══════════════════════════════════════════
+   Content Loading
+   ═══════════════════════════════════════════ */
+
 async function loadMarkdownFile(filename) {
-    try {
-        const response = await fetch(filename);
-        const text = await response.text();
-        return text;
-    } catch (error) {
-        console.error(`Error loading ${filename}:`, error);
-        return '';
+  try {
+    const response = await fetch(filename);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} — ${filename}`);
     }
+    return await response.text();
+  } catch (error) {
+    console.error(`Error loading ${filename}:`, error.message);
+    return null;
+  }
 }
+
+/* ── Front matter parser (supports --- delimiters) ── */
 
 function parseFrontMatter(content) {
-    const lines = content.split('\n');
-    const data = {};
-    let frontMatterEnded = false;
-    const contentLines = [];
-    
-    lines.forEach(line => {
-        if (!frontMatterEnded) {
-            const colonIndex = line.indexOf(':');
-            if (colonIndex > 0) {
-                const key = line.substring(0, colonIndex).trim();
-                const value = line.substring(colonIndex + 1).trim();
-                if (key && value) {
-                    data[key] = value;
-                }
-            } else if (line.trim() === '') {
-                frontMatterEnded = true;
-            }
-        } else {
-            contentLines.push(line);
+  const data = {};
+  let body = content;
+
+  // Match opening ---
+  const firstLine = content.split('\n')[0].trim();
+  if (firstLine === '---') {
+    const endIdx = content.indexOf('\n---', 3); // look for closing ---
+    if (endIdx !== -1) {
+      const fmLines = content.slice(3, endIdx).trim().split('\n');
+      body = content.slice(endIdx + 4).trim();
+
+      fmLines.forEach((line) => {
+        const colonIdx = line.indexOf(':');
+        if (colonIdx > 0) {
+          const key = line.slice(0, colonIdx).trim();
+          const value = line.slice(colonIdx + 1).trim();
+          if (key) data[key] = value;
         }
-    });
-    
-    return { data, content: contentLines.join('\n').trim() };
+      });
+    }
+  }
+
+  return { data, content: body };
 }
+
+
+/* ═══════════════════════════════════════════
+   Portfolio Builder
+   ═══════════════════════════════════════════ */
 
 async function loadPortfolio() {
-    
-    
-    if (typeof marked === 'undefined') {
-        console.error('Marked.js library not loaded');
-        return;
-    }
-    
-    const nameElement = document.getElementById('name');
-    const titleElement = document.getElementById('title');
-    const aboutElement = document.getElementById('about');
-    const blogElement = document.getElementById('blog');
-    const projectsElement = document.getElementById('projects');
-    const contactElement = document.getElementById('contact');
+  if (typeof marked === 'undefined') {
+    console.error('Marked.js library not loaded');
+    return;
+  }
 
-    
-    const aboutContent = await loadMarkdownFile('content/about.md');
-    const blogContent = await loadMarkdownFile('content/blog.md');
-    const projectsContent = await loadMarkdownFile('content/projects.md');
-    const contactContent = await loadMarkdownFile('content/contact.md');
-    
-    
+  const nameEl = document.getElementById('name');
+  const titleEl = document.getElementById('title');
+  const aboutEl = document.getElementById('about');
+  const blogEl = document.getElementById('blog');
+  const projectsEl = document.getElementById('projects');
+  const contactEl = document.getElementById('contact');
 
-    if (aboutContent) {
-        const { data, content } = parseFrontMatter(aboutContent);
-        nameElement.textContent = data.name || 'Your Name';
-        titleElement.textContent = data.title || 'Your Title';
-        aboutElement.innerHTML = marked.parse(content);
-    }
+  // Show loading state
+  [aboutEl, blogEl, projectsEl, contactEl].forEach((el) => {
+    if (el) el.classList.add('is-loading');
+  });
 
-    if (blogContent) {
-        const { data, content } = parseFrontMatter(blogContent);
-        let blogHTML = '<h2>Blog</h2>';
-        
-        if (data.description) {
-            blogHTML += `<p>${data.description}</p>`;
-        }
-        
-        blogHTML += marked.parse(content);
-        
-        if (data.link) {
-            blogHTML += `<p><a href="${data.link}" target="_blank" class="blog-link">Visit Blog →</a></p>`;
-        }
-        
-        blogElement.innerHTML = blogHTML;
-    }
+  const [aboutText, blogText, projectsText, contactText] = await Promise.all([
+    loadMarkdownFile('content/about.md'),
+    loadMarkdownFile('content/blog.md'),
+    loadMarkdownFile('content/projects.md'),
+    loadMarkdownFile('content/contact.md'),
+  ]);
 
-    if (projectsContent) {
-        
-        const projects = projectsContent.split('---').filter(p => p.trim());
-        
-        let projectsHTML = '<h2>Projects</h2>';
+  /* ── About ── */
+  if (aboutText && aboutEl) {
+    const { data, content } = parseFrontMatter(aboutText);
+    nameEl.textContent = data.name || 'Your Name';
+    titleEl.textContent = data.title || 'Your Title';
 
-        // Split by --- and look for entries that start with ---\nname:
-        const projectEntries = [];
-        let currentProject = '';
-        let inProject = false;
-        
-        projectsContent.split('\n').forEach(line => {
-            if (line === '---') {
-                if (inProject && currentProject.trim()) {
-                    projectEntries.push(currentProject);
-                }
-                currentProject = '';
-                inProject = true;
-            } else {
-                currentProject += line + '\n';
-            }
+    let html = marked.parse(content);
+
+    // Append skills tags from front matter
+    if (data.skills) {
+      const skills = data.skills.split(',').map((s) => s.trim()).filter(Boolean);
+      if (skills.length) {
+        html += '<ul class="skills-list">';
+        skills.forEach((skill) => {
+          html += `<li class="skill-tag">${skill}</li>`;
         });
-        
-        if (currentProject.trim()) {
-            projectEntries.push(currentProject);
+        html += '</ul>';
+      }
+    }
+
+    aboutEl.innerHTML = html;
+    aboutEl.classList.remove('is-loading');
+    aboutEl.classList.add('is-loaded');
+  }
+
+  /* ── Blog ── */
+  if (blogText && blogEl) {
+    const { data, content } = parseFrontMatter(blogText);
+    let html = '<h2>Blog</h2>';
+
+    if (content) {
+      html += marked.parse(content);
+    }
+    if (data.link) {
+      html += `<a href="${data.link}" target="_blank" class="blog-link">Read the blog →</a>`;
+    }
+
+    blogEl.innerHTML = html;
+    blogEl.classList.remove('is-loading');
+    blogEl.classList.add('is-loaded');
+  }
+
+  /* ── Projects ── */
+  if (projectsText && projectsEl) {
+    const projectEntries = [];
+    let currentProject = '';
+    let inProject = false;
+
+    projectsText.split('\n').forEach((line) => {
+      if (line.trim() === '---') {
+        if (inProject && currentProject.trim()) {
+          projectEntries.push(currentProject);
         }
-        
-        
-        
-        projectEntries.forEach((project, index) => {
-            const trimmedProject = project.trim();
-            if (!trimmedProject) return;
-            
-            const { data, content } = parseFrontMatter(trimmedProject);
-            
-            if (data.name && data.name.trim()) {
-                projectsHTML += `
-                    <div class="project">
-                        <h3>${data.name}</h3>
-                        <p>${data.description || ''}</p>
-                        <div>${marked.parse(content)}</div>
-                        ${data.link ? `<p><a href="${data.link}" target="_blank">View Project</a></p>` : ''}
-                    </div>
-                `;
-            } else {
-                
-            }
-        });
+        currentProject = '';
+        inProject = true;
+      } else {
+        currentProject += line + '\n';
+      }
+    });
 
-        projectsElement.innerHTML = projectsHTML;
-        
-    } else {
-        console.error('No projects content found');
+    if (currentProject.trim()) {
+      projectEntries.push(currentProject);
     }
 
-    if (contactContent) {
-        contactElement.innerHTML = '<h2>Contact</h2>' + marked.parse(contactContent);
-    }
+    let html = '<h2>Projects</h2>';
+
+    projectEntries.forEach((project) => {
+      const trimmed = project.trim();
+      if (!trimmed) return;
+
+      const { data, content } = parseFrontMatter(trimmed);
+      if (!data.name || !data.name.trim()) return;
+
+      html += '<div class="project">';
+      html += `<h3>${data.name}</h3>`;
+
+      // Tech tags
+      if (data.tags) {
+        const tags = data.tags.split(',').map((t) => t.trim()).filter(Boolean);
+        if (tags.length) {
+          html += '<div class="project-tags">';
+          tags.forEach((tag) => {
+            html += `<span class="project-tag">${tag}</span>`;
+          });
+          html += '</div>';
+        }
+      }
+
+      if (data.description) {
+        html += `<p>${data.description}</p>`;
+      }
+      if (content) {
+        // Use div wrapper to avoid nested <p> from marked
+        html += `<div>${marked.parse(content)}</div>`;
+      }
+      if (data.link) {
+        html += `<p class="project-links"><a href="${data.link}" target="_blank">View Project →</a></p>`;
+      }
+      html += '</div>';
+    });
+
+    projectsEl.innerHTML = html;
+    projectsEl.classList.remove('is-loading');
+    projectsEl.classList.add('is-loaded');
+  }
+
+  /* ── Contact ── */
+  if (contactText && contactEl) {
+    const html = '<h2>Contact</h2>' + marked.parse(contactText);
+    contactEl.innerHTML = html;
+    contactEl.classList.remove('is-loading');
+    contactEl.classList.add('is-loaded');
+  }
 }
+
+
+/* ═══════════════════════════════════════════
+   Theme Toggle
+   ═══════════════════════════════════════════ */
 
 function initThemeToggle() {
-    const themeToggle = document.getElementById('themeToggle');
-    const body = document.body;
-    
-    // Check for saved theme preference or default to light mode
-    const currentTheme = localStorage.getItem('theme') || 'light';
-    
-    if (currentTheme === 'dark') {
-        body.classList.add('dark-mode');
-        themeToggle.textContent = '☀️';
+  const toggle = document.getElementById('themeToggle');
+  const html = document.documentElement;
+
+  if (!toggle) return;
+
+  const saved = localStorage.getItem('theme') || 'dark';
+
+  if (saved === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    toggle.textContent = '☀️';
+  } else {
+    toggle.textContent = '🌙';
+  }
+
+  toggle.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      toggle.textContent = '🌙';
+      localStorage.setItem('theme', 'light');
     } else {
-        themeToggle.textContent = '🌙';
+      html.setAttribute('data-theme', 'dark');
+      toggle.textContent = '☀️';
+      localStorage.setItem('theme', 'dark');
     }
-    
-    themeToggle.addEventListener('click', () => {
-        const isCurrentlyDark = body.classList.contains('dark-mode');
-        
-        if (isCurrentlyDark) {
-            body.classList.remove('dark-mode');
-            themeToggle.textContent = '🌙';
-            localStorage.setItem('theme', 'light');
-        } else {
-            body.classList.add('dark-mode');
-            themeToggle.textContent = '☀️';
-            localStorage.setItem('theme', 'dark');
-        }
-    });
+  });
 }
 
+
+/* ═══════════════════════════════════════════
+   Navigation — Scroll Spy
+   ═══════════════════════════════════════════ */
+
+function initNavScrollSpy() {
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  if (!sections.length || !navLinks.length) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          navLinks.forEach((link) => {
+            const targetId = link.getAttribute('href').substring(1);
+            link.classList.toggle('active', targetId === entry.target.id);
+          });
+        }
+      });
+    },
+    { threshold: 0.3 },
+  );
+
+  sections.forEach((section) => observer.observe(section));
+}
+
+
+/* ═══════════════════════════════════════════
+   Init
+   ═══════════════════════════════════════════ */
+
 document.addEventListener('DOMContentLoaded', () => {
-    loadPortfolio();
-    initThemeToggle();
+  loadPortfolio();
+  initThemeToggle();
+  initNavScrollSpy();
 });
