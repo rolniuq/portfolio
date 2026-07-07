@@ -81,7 +81,7 @@ async function fetchBlogPosts(blogUrl) {
         date: dates[i] || '',
         excerpt: excerpts[i] || '',
         tags: tagArrays[i] || [],
-        url: blogUrl.replace(/\/$/, '') + '/' + slugs[i],
+        url: blogUrl.replace(/\/$/, '') + '/blog/' + slugs[i],
       });
     }
     return posts;
