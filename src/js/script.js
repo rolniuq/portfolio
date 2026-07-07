@@ -44,6 +44,54 @@ function parseFrontMatter(content) {
 }
 
 
+/* ── Blog post fetcher (scrapes the Next.js blog HTML) ── */
+
+async function fetchBlogPosts(blogUrl) {
+  try {
+    const res = await fetch(blogUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const html = await res.text();
+
+    // Extract slugs, titles, dates, excerpts from the RSC payload
+    // Note: RSC payload uses escaped quotes: \"slug\":\"value\"
+    const slugRe = /\\"slug\\":\\"([^\\"]+)\\"/g;
+    const titleRe = /\\"title\\":\\"([^\\"]+)\\"/g;
+    const dateRe = /\\"date\\":\\"([^\\"]+)\\"/g;
+    const excerptRe = /\\"excerpt\\":\\"([^\\"]+)\\"/g;
+    // Extract tags — they appear as [\"tag1\",\"tag2\",...]
+    const tagsRe = /\\"tags\\":\[([^\]]+)\]/g;
+
+    const slugs = [...html.matchAll(slugRe)].map((m) => m[1]);
+    const titles = [...html.matchAll(titleRe)].map((m) => m[1]);
+    const dates = [...html.matchAll(dateRe)].map((m) => m[1]);
+    const excerpts = [...html.matchAll(excerptRe)].map((m) => m[1]);
+    const tagArrays = [...html.matchAll(tagsRe)].map((m) =>
+      [...m[1].matchAll(/\\"([^\\"]+)\\"/g)].map((t) => t[1]),
+    );
+
+    // Deduplicate by slug (RSC payload may contain duplicates)
+    const seen = new Set();
+    const posts = [];
+    for (let i = 0; i < slugs.length; i++) {
+      if (!slugs[i] || seen.has(slugs[i])) continue;
+      seen.add(slugs[i]);
+      posts.push({
+        slug: slugs[i],
+        title: titles[i] || '',
+        date: dates[i] || '',
+        excerpt: excerpts[i] || '',
+        tags: tagArrays[i] || [],
+        url: blogUrl.replace(/\/$/, '') + '/' + slugs[i],
+      });
+    }
+    return posts;
+  } catch (err) {
+    console.error('Error fetching blog posts:', err.message);
+    return null;
+  }
+}
+
+
 /* ═══════════════════════════════════════════
    Portfolio Builder
    ═══════════════════════════════════════════ */
@@ -101,11 +149,20 @@ async function loadPortfolio() {
   /* ── Blog ── */
   if (blogText && blogEl) {
     const { data, content } = parseFrontMatter(blogText);
+    const blogBaseUrl = data.link || 'https://rolniuqblogs.vercel.app/';
+
     let html = '<h2>Blog</h2>';
 
     if (content) {
       html += marked.parse(content);
     }
+
+    // Card grid container
+    html += '<div class="blog-grid" id="blogGrid">';
+    html += '<p class="blog-grid-empty">Loading posts…</p>';
+    html += '</div>';
+
+    // Link to full blog
     if (data.link) {
       html += `<a href="${data.link}" target="_blank" class="blog-link">Read the blog →</a>`;
     }
@@ -113,37 +170,98 @@ async function loadPortfolio() {
     blogEl.innerHTML = html;
     blogEl.classList.remove('is-loading');
     blogEl.classList.add('is-loaded');
+
+    // Fetch and render blog posts asynchronously
+    fetchBlogPosts(blogBaseUrl).then((posts) => {
+      const grid = document.getElementById('blogGrid');
+      if (!grid) return;
+
+      if (!posts || posts.length === 0) {
+        grid.innerHTML = '<p class="blog-grid-empty">No posts yet.</p>';
+        return;
+      }
+
+      // Limit to 2 rows of 3 = 6 posts max
+      const displayPosts = posts.slice(0, 6);
+
+      grid.innerHTML = displayPosts
+        .map(
+          (post) => `
+        <a href="${post.url}" target="_blank" class="blog-card">
+          <div class="blog-card-tags">
+            ${post.tags
+              .map((tag) => `<span class="blog-card-tag">${tag}</span>`)
+              .join('')}
+          </div>
+          <h3>${post.title}</h3>
+          <p>${post.excerpt}</p>
+          <div class="blog-card-date">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            ${post.date}
+          </div>
+        </a>
+      `,
+        )
+        .join('');
+    });
   }
 
   /* ── Projects ── */
   if (projectsText && projectsEl) {
-    const projectEntries = [];
-    let currentProject = '';
-    let inProject = false;
+    // Each project is delimited by --- lines with this pattern:
+    //
+    //   ---
+    //   name: Project Name
+    //   description: ...
+    //   tags: ...
+    //   link: ...
+    //   ---
+    //
+    //   Optional body text.
+    //
+    //   ---   <-- separator between projects
+    //
+    // State machine: first --- starts a project + front matter,
+    // second --- closes front matter, third --- closes the project.
+    const lines = projectsText.split('\n');
+    const projectBodies = [];
+    let currentProject = null;
+    let inFrontMatter = false;
 
-    projectsText.split('\n').forEach((line) => {
+    for (const line of lines) {
       if (line.trim() === '---') {
-        if (inProject && currentProject.trim()) {
-          projectEntries.push(currentProject);
+        if (currentProject === null) {
+          // First --- : start a new project and enter front matter
+          currentProject = '';
+          inFrontMatter = true;
+          currentProject += line + '\n';
+        } else if (inFrontMatter) {
+          // Second --- : close front matter section
+          inFrontMatter = false;
+          currentProject += line + '\n';
+        } else {
+          // Third --- : end of project body → push and reset
+          projectBodies.push(currentProject);
+          currentProject = null;
         }
-        currentProject = '';
-        inProject = true;
-      } else {
+      } else if (currentProject !== null) {
         currentProject += line + '\n';
       }
-    });
-
-    if (currentProject.trim()) {
-      projectEntries.push(currentProject);
+    }
+    // Don't forget the last project if the file doesn't end with ---
+    if (currentProject !== null) {
+      projectBodies.push(currentProject);
     }
 
     let html = '<h2>Projects</h2>';
 
-    projectEntries.forEach((project) => {
-      const trimmed = project.trim();
-      if (!trimmed) return;
-
-      const { data, content } = parseFrontMatter(trimmed);
+    projectBodies.forEach((body) => {
+      const { data, content } = parseFrontMatter(body);
       if (!data.name || !data.name.trim()) return;
 
       html += '<div class="project">';
@@ -186,6 +304,11 @@ async function loadPortfolio() {
     contactEl.classList.remove('is-loading');
     contactEl.classList.add('is-loaded');
   }
+
+  // Refresh scroll spy now that dynamic content has landed
+  if (typeof updateNavSpy === 'function') {
+    updateNavSpy();
+  }
 }
 
 
@@ -227,27 +350,97 @@ function initThemeToggle() {
    Navigation — Scroll Spy
    ═══════════════════════════════════════════ */
 
+let updateNavSpy = null; // exposed so loadPortfolio can refresh after content loads
+
 function initNavScrollSpy() {
   const sections = document.querySelectorAll('section[id]');
   const navLinks = document.querySelectorAll('.nav-link');
 
   if (!sections.length || !navLinks.length) return;
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          navLinks.forEach((link) => {
-            const targetId = link.getAttribute('href').substring(1);
-            link.classList.toggle('active', targetId === entry.target.id);
-          });
-        }
-      });
-    },
-    { threshold: 0.3 },
-  );
+  updateNavSpy = function updateActiveLink() {
+    const headerEl = document.querySelector('header');
+    const headerH = headerEl ? headerEl.offsetHeight : 120;
+    const scrollY = window.scrollY + headerH + 20; // offset for sticky header
+    let currentId = sections[0]?.id;
 
-  sections.forEach((section) => observer.observe(section));
+    // Find the last section whose top is above the scroll position
+    sections.forEach((section) => {
+      if (section.offsetTop <= scrollY) {
+        currentId = section.id;
+      }
+    });
+
+    navLinks.forEach((link) => {
+      const targetId = link.getAttribute('href').substring(1);
+      link.classList.toggle('active', targetId === currentId);
+    });
+  };
+
+  window.addEventListener('scroll', updateNavSpy, { passive: true });
+  updateNavSpy(); // set initial state
+}
+
+
+/* ═══════════════════════════════════════════
+   Sticky Header Effects
+   ═══════════════════════════════════════════ */
+
+function initStickyHeader() {
+  const header = document.querySelector('header');
+  const goTopBtn = document.getElementById('goToTop');
+  if (!header) return;
+
+  // Use IntersectionObserver to detect when header is "stuck"
+  // A sentinel at the top tells us if we've scrolled past the header
+  const sentinel = document.createElement('div');
+  sentinel.style.position = 'absolute';
+  sentinel.style.top = '0';
+  sentinel.style.height = '1px';
+  sentinel.style.width = '1px';
+  document.body.prepend(sentinel);
+
+  const stuckObserver = new IntersectionObserver(
+    ([entry]) => {
+      // When the sentinel is NOT intersecting, we've scrolled past it →
+      // the header is stuck.
+      header.classList.toggle('is-stuck', !entry.isIntersecting);
+    },
+    { threshold: [0] },
+  );
+  stuckObserver.observe(sentinel);
+
+  // Compact header + go-to-top visibility on scroll
+  let ticking = false;
+  const handleScroll = () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        const scrolled = window.scrollY > 60;
+        header.classList.toggle('is-compact', scrolled);
+
+        if (goTopBtn) {
+          goTopBtn.classList.toggle('is-visible', window.scrollY > 400);
+        }
+        ticking = false;
+      });
+      ticking = true;
+    }
+  };
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+}
+
+/* ═══════════════════════════════════════════
+   Go to Top
+   ═══════════════════════════════════════════ */
+
+function initGoToTop() {
+  const btn = document.getElementById('goToTop');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 }
 
 
@@ -259,4 +452,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPortfolio();
   initThemeToggle();
   initNavScrollSpy();
+  initStickyHeader();
+  initGoToTop();
 });
