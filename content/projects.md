@@ -94,3 +94,14 @@ tags: Lua, Love2D, Game Development
 ---
 
 A tower defense game built with the Love2D framework. Features wave-based enemy spawning, tower placement and upgrading, pathfinding, and multiple enemy types with progressive difficulty scaling.
+
+---
+
+---
+name: dual-pincer
+description: OpenCode plugin that runs two AI agents in parallel to debate plans from opposite directions
+link: https://github.com/rolniuq/dual-pincer
+tags: Shell, AI, Plugin, OpenCode
+---
+
+An npm-published OpenCode plugin that applies a structured debate workflow: a Steelman agent defends a plan while a Red Team agent attacks it, then a Mediator reconciles both into a stronger result. Published to npm as `dual-pincer-plugin`.

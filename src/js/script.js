@@ -258,43 +258,75 @@ async function loadPortfolio() {
       projectBodies.push(currentProject);
     }
 
-    let html = '<h2>Projects</h2>';
+    const INITIAL_VISIBLE = 4; // show first 4, rest behind "Show More"
+    let projectCards = [];
 
     projectBodies.forEach((body) => {
       const { data, content } = parseFrontMatter(body);
       if (!data.name || !data.name.trim()) return;
 
-      html += '<div class="project">';
-      html += `<h3>${data.name}</h3>`;
+      let card = '<div class="project">';
+      card += `<h3>${data.name}</h3>`;
 
       // Tech tags
       if (data.tags) {
         const tags = data.tags.split(',').map((t) => t.trim()).filter(Boolean);
         if (tags.length) {
-          html += '<div class="project-tags">';
+          card += '<div class="project-tags">';
           tags.forEach((tag) => {
-            html += `<span class="project-tag">${tag}</span>`;
+            card += `<span class="project-tag">${tag}</span>`;
           });
-          html += '</div>';
+          card += '</div>';
         }
       }
 
       if (data.description) {
-        html += `<p>${data.description}</p>`;
+        card += `<p>${data.description}</p>`;
       }
       if (content) {
         // Use div wrapper to avoid nested <p> from marked
-        html += `<div>${marked.parse(content)}</div>`;
+        card += `<div>${marked.parse(content)}</div>`;
       }
       if (data.link) {
-        html += `<p class="project-links"><a href="${data.link}" target="_blank">View Project →</a></p>`;
+        card += `<p class="project-links"><a href="${data.link}" target="_blank">View Project →</a></p>`;
       }
-      html += '</div>';
+      card += '</div>';
+      projectCards.push(card);
     });
+
+    // Split into visible and hidden
+    const visibleCards = projectCards.slice(0, INITIAL_VISIBLE);
+    const hiddenCards = projectCards.slice(INITIAL_VISIBLE);
+
+    let html = '<h2>Projects</h2>';
+    html += '<div id="projectsVisible">' + visibleCards.join('') + '</div>';
+
+    if (hiddenCards.length > 0) {
+      html += '<div id="projectsExtra" class="projects-extra">' + hiddenCards.join('') + '</div>';
+      html += `<button class="projects-toggle" id="projectsToggle" data-expanded="false">Show More (${hiddenCards.length}) ↓</button>`;
+    }
 
     projectsEl.innerHTML = html;
     projectsEl.classList.remove('is-loading');
     projectsEl.classList.add('is-loaded');
+
+    // Wire up toggle
+    const toggleBtn = document.getElementById('projectsToggle');
+    const extra = document.getElementById('projectsExtra');
+    if (toggleBtn && extra) {
+      toggleBtn.addEventListener('click', () => {
+        const expanded = toggleBtn.getAttribute('data-expanded') === 'true';
+        if (expanded) {
+          extra.classList.remove('is-open');
+          toggleBtn.textContent = `Show More (${hiddenCards.length}) ↓`;
+          toggleBtn.setAttribute('data-expanded', 'false');
+        } else {
+          extra.classList.add('is-open');
+          toggleBtn.textContent = 'Show Less ↑';
+          toggleBtn.setAttribute('data-expanded', 'true');
+        }
+      });
+    }
   }
 
   /* ── Contact ── */
