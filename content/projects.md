@@ -105,3 +105,36 @@ tags: Shell, AI, Plugin, OpenCode
 ---
 
 An npm-published OpenCode plugin that applies a structured debate workflow: a Steelman agent defends a plan while a Red Team agent attacks it, then a Mediator reconciles both into a stronger result. Published to npm as `dual-pincer-plugin`.
+
+---
+
+---
+name: line-ads
+description: Go SDK for LINE Ads Platform API v3
+link: https://github.com/rolniuq/line-ads
+tags: Go, LINE Ads, SDK, REST API
+---
+
+A Go SDK for the LINE Ads Platform API v3. Supports campaign management, ad groups, ads, custom audiences, reporting simulations, and Messaging API integration. Features JWS (HMAC-SHA256) request signing, automatic OAuth2 token refresh, and a clean builder-pattern API.
+
+---
+
+---
+name: blog
+description: Personal blog built with Next.js
+link: https://github.com/rolniuq/blog
+tags: TypeScript, Next.js, Tailwind CSS, Markdown
+---
+
+A personal blog built with Next.js, featuring server-side rendering, Tailwind CSS styling, and Markdown-based content management. Deployed at rolniuqblogs.vercel.app.
+
+---
+
+---
+name: audio-books
+description: Convert PDF to audiobook with Vietnamese TTS
+link: https://github.com/rolniuq/audio-books
+tags: TypeScript, React, Python, FastAPI, TTS
+---
+
+A full-stack application that converts PDF documents into spoken audiobooks using Vietnamese TTS. React frontend with FastAPI backend, supporting multiple voices, chapter detection, and audio streaming. Docker Compose deployment.
