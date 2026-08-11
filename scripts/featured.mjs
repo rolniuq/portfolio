@@ -13,7 +13,7 @@
 
 const GH_USER = 'rolniuq';
 const META_REPOS = new Set(['portfolio', 'blog']);
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash'; // fallback; runtime resolution preferred
 const OUTPUT = 'featured.json';
 
 const ghToken = process.env.GH_TOKEN;
@@ -30,6 +30,43 @@ async function fetchJson(url, init) {
     throw new Error(`HTTP ${res.status} for ${url}`);
   }
   return res.json();
+}
+
+// Pick a usable generation model at runtime so model renames don't break the
+// pipeline. Prefer available flash-class models with JSON output support.
+async function resolveGeminiModel() {
+  const data = await fetchJson(
+    `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiKey}`,
+  );
+
+  const preferred = [
+    /gemini-3.*flash/i,
+    /gemini-2\.[5-9].*flash/i,
+    /gemini-flash-latest/i,
+    /gemini-1\.[5-9].*flash/i,
+  ];
+
+  const models = data.models || [];
+  for (const re of preferred) {
+    const match = models.find(
+      (m) => re.test(m.name) && (m.supportedGenerationMethods || []).includes('generateContent'),
+    );
+    if (match) {
+      console.log(`🧠 Using model ${match.name.replace(/^models\//, '')}`);
+      return match.name.replace(/^models\//, '');
+    }
+  }
+
+  const any = models.find(
+    (m) => (m.supportedGenerationMethods || []).includes('generateContent'),
+  );
+  if (any) {
+    console.log(`🧠 Using fallback model ${any.name.replace(/^models\//, '')}`);
+    return any.name.replace(/^models\//, '');
+  }
+
+  console.log('⚠️ No generateContent model found — falling back to constant');
+  return GEMINI_MODEL;
 }
 
 async function fetchRepos() {
@@ -84,8 +121,8 @@ Respond with ONLY valid JSON, no markdown fences, exactly this shape:
 {"name":"<exact repo name>","blurb":"<1-2 sentence engaging description>","tags":["<up to 4 relevant tags>"]}`;
 }
 
-async function askGemini(prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey}`;
+async function askGemini(model, prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
 
   const data = await fetchJson(url, {
     method: 'POST',
@@ -113,7 +150,8 @@ async function main() {
 
   console.log(`📦 ${repos.length} candidate repos found`);
 
-  const pick = await askGemini(buildPrompt(repos));
+  const model = await resolveGeminiModel();
+  const pick = await askGemini(model, buildPrompt(repos));
 
   const repo = repos.find((r) => r.name === pick.name);
   if (!repo) {
