@@ -13,7 +13,7 @@
 
 const GH_USER = 'rolniuq';
 const META_REPOS = new Set(['portfolio', 'blog']);
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 const OUTPUT = 'featured.json';
 
 const ghToken = process.env.GH_TOKEN;
