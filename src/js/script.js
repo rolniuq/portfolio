@@ -395,14 +395,24 @@ function initNavScrollSpy() {
     const headerEl = document.querySelector('header');
     const headerH = headerEl ? headerEl.offsetHeight : 120;
     const scrollY = window.scrollY + headerH + 20; // offset for sticky header
+    const doc = document.documentElement;
+    const last = sections[sections.length - 1];
     let currentId = sections[0]?.id;
 
-    // Find the last section whose top is above the scroll position
-    sections.forEach((section) => {
-      if (section.offsetTop <= scrollY) {
-        currentId = section.id;
-      }
-    });
+    // When scrolled to the very bottom, activate the last section even if its
+    // top never passed the header (short page → not enough room to scroll).
+    const atBottom = window.scrollY + window.innerHeight >= doc.scrollHeight - 4;
+
+    if (atBottom && last) {
+      currentId = last.id;
+    } else {
+      // Find the last section whose top is above the scroll position
+      sections.forEach((section) => {
+        if (section.offsetTop <= scrollY) {
+          currentId = section.id;
+        }
+      });
+    }
 
     navLinks.forEach((link) => {
       const targetId = link.getAttribute('href').substring(1);
@@ -444,12 +454,22 @@ function initStickyHeader() {
   stuckObserver.observe(sentinel);
 
   // Compact header + go-to-top visibility on scroll
+  // Hysteresis: engage at 120px, disengage at 30px, so layout-height changes
+  // from the shrinking header can't oscillate around a single threshold.
   let ticking = false;
+  let compact = false;
+  const ENGAGE = 120;
+  const DISENGAGE = 30;
   const handleScroll = () => {
     if (!ticking) {
       requestAnimationFrame(() => {
-        const scrolled = window.scrollY > 60;
-        header.classList.toggle('is-compact', scrolled);
+        if (!compact && window.scrollY > ENGAGE) {
+          compact = true;
+          header.classList.add('is-compact');
+        } else if (compact && window.scrollY < DISENGAGE) {
+          compact = false;
+          header.classList.remove('is-compact');
+        }
 
         if (goTopBtn) {
           goTopBtn.classList.toggle('is-visible', window.scrollY > 400);
