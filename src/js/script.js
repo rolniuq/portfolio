@@ -44,6 +44,21 @@ function parseFrontMatter(content) {
 }
 
 
+/* ── Featured project (pinned card from featured.json) ── */
+
+async function loadFeaturedProject() {
+  try {
+    const res = await fetch('featured.json');
+    if (!res.ok) return null; // 404 -> not generated yet, skip silently
+    const data = await res.json();
+    if (!data || !data.name || !data.url) return null;
+    return data;
+  } catch (error) {
+    console.error('Error loading featured.json:', error.message);
+    return null;
+  }
+}
+
 /* ── Blog post fetcher (scrapes the Next.js blog HTML) ── */
 
 async function fetchBlogPosts(blogUrl) {
@@ -298,7 +313,27 @@ async function loadPortfolio() {
     const visibleCards = projectCards.slice(0, INITIAL_VISIBLE);
     const hiddenCards = projectCards.slice(INITIAL_VISIBLE);
 
+    // Featured project pinned at the top (from featured.json)
+    const featured = await loadFeaturedProject();
+
     let html = '<h2>Projects</h2>';
+
+    if (featured) {
+      const tags = (featured.tags || [])
+        .map((t) => `<span class="project-tag">${t}</span>`)
+        .join('');
+
+      html += `
+        <div class="featured-project">
+          <span class="featured-badge">★ Featured</span>
+          <h3>${featured.name}</h3>
+          ${tags ? `<div class="project-tags">${tags}</div>` : ''}
+          <p>${featured.blurb || featured.description || ''}</p>
+          <p class="project-links"><a href="${featured.url}" target="_blank">View Project →</a></p>
+        </div>
+      `;
+    }
+
     html += '<div id="projectsVisible">' + visibleCards.join('') + '</div>';
 
     if (hiddenCards.length > 0) {
@@ -341,40 +376,6 @@ async function loadPortfolio() {
   if (typeof updateNavSpy === 'function') {
     updateNavSpy();
   }
-}
-
-
-/* ═══════════════════════════════════════════
-   Theme Toggle
-   ═══════════════════════════════════════════ */
-
-function initThemeToggle() {
-  const toggle = document.getElementById('themeToggle');
-  const html = document.documentElement;
-
-  if (!toggle) return;
-
-  const saved = localStorage.getItem('theme') || 'dark';
-
-  if (saved === 'dark') {
-    html.setAttribute('data-theme', 'dark');
-    toggle.textContent = '☀️';
-  } else {
-    toggle.textContent = '🌙';
-  }
-
-  toggle.addEventListener('click', () => {
-    const isDark = html.getAttribute('data-theme') === 'dark';
-    if (isDark) {
-      html.removeAttribute('data-theme');
-      toggle.textContent = '🌙';
-      localStorage.setItem('theme', 'light');
-    } else {
-      html.setAttribute('data-theme', 'dark');
-      toggle.textContent = '☀️';
-      localStorage.setItem('theme', 'dark');
-    }
-  });
 }
 
 
@@ -482,7 +483,6 @@ function initGoToTop() {
 
 document.addEventListener('DOMContentLoaded', () => {
   loadPortfolio();
-  initThemeToggle();
   initNavScrollSpy();
   initStickyHeader();
   initGoToTop();

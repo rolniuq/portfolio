@@ -9,7 +9,7 @@ This portfolio showcases the work of Võ Hữu Trường Quỳnh (Raymond), a So
 ## Features
 
 - **Minimal Design**: Clean, distraction-free interface
-- **Dark/Light Mode**: Toggle between themes with smooth transitions
+- **Dark/Light Mode**: Follows the device's system color scheme (`prefers-color-scheme`) — no toggle needed
 - **Static Content**: Markdown-based content management
 - **Responsive**: Works across all device sizes
 - **Fast**: No build tools or frameworks - just vanilla web technologies

@@ -1,0 +1,36 @@
+name: Featured Project
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'   # every Monday 03:00 UTC
+  workflow_dispatch:      # manual trigger from the Actions tab
+  push:
+    branches: [master]
+    paths-ignore: [featured.json]  # avoid re-triggering after the workflow commits
+
+permissions:
+  contents: write
+
+jobs:
+  generate-featured:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate featured.json
+        run: node scripts/featured.mjs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Commit featured.json
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: update featured project'
+          file_pattern: featured.json
