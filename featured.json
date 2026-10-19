@@ -2,7 +2,7 @@
   "name": "browser-activities-monitor",
   "url": "https://github.com/rolniuq/browser-activities-monitor",
   "description": "Privacy-first Chrome extension tracking browsing activity, weekly/monthly summaries, and time budgets with notifications",
-  "blurb": "A privacy-focused Chrome extension that tracks browsing habits, provides detailed usage summaries, and helps users manage digital well-being through time budgets and notifications.",
+  "blurb": "A privacy-focused Chrome extension that tracks browsing habits, provides detailed usage summaries, and helps users manage time budgets with real-time notifications.",
   "tags": [
     "TypeScript",
     "Chrome Extension",
@@ -10,5 +10,5 @@
     "Data Visualization"
   ],
   "selected_by": "gemini",
-  "updated_at": "2026-10-12T10:25:24.414Z"
+  "updated_at": "2026-10-19T08:35:39.093Z"
 }
