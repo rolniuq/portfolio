@@ -1,14 +1,14 @@
 {
-  "name": "tttn-api",
-  "url": "https://github.com/rolniuq/tttn-api",
+  "name": "go-beats",
+  "url": "https://github.com/rolniuq/go-beats",
   "description": "",
-  "blurb": "A comprehensive TypeScript backend service designed to power a multi-client management ecosystem with secure RESTful endpoints and structured data persistence.",
+  "blurb": "A high-performance Go library for real-time audio analysis and beat detection, utilizing advanced signal processing techniques.",
   "tags": [
-    "TypeScript",
-    "Node.js",
-    "REST API",
-    "Backend Architecture"
+    "Go",
+    "Audio Processing",
+    "DSP",
+    "Algorithms"
   ],
   "selected_by": "gemini",
-  "updated_at": "2026-11-09T11:05:37.983Z"
+  "updated_at": "2026-11-16T10:48:57.541Z"
 }
